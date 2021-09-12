@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/clientv3"
+	"logAgent/common"
 	"time"
 )
 
@@ -15,13 +16,10 @@ import (
 */
 
 // etcd相关操作
-type collectEntry struct {
-	Path  string `json:"path"`
-	Topic string `json:"topic"`
-}
 var (
-	client * clientv3.Client
+	client *clientv3.Client
 )
+
 func Init(address []string) (err error) {
 	client, err = clientv3.New(clientv3.Config{
 		Endpoints:   address,
@@ -35,7 +33,8 @@ func Init(address []string) (err error) {
 }
 
 // 拉取日志收集配置项的函数
-func GetConf(key string) (collectEntryList []collectEntry, err error) {
+
+func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 	resp, err := client.Get(ctx, key)

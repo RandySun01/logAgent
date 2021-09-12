@@ -21,7 +21,9 @@ func main() {
 	defer cli.Close()
 	// 添加数据
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	_, err = cli.Put(ctx, "name", "randySun")
+	str := `[{"path":"d:/logs/s4.log","topic":"s4_log"},{"path":"e:/logs/web.log","topic":"web_log"}]`
+
+	_, err = cli.Put(ctx, "collect_log_conf", str)
 	if err != nil{
 		fmt.Printf("put to etcd failed, err: %#v", err)
 	}
@@ -30,7 +32,7 @@ func main() {
 
 	// get 取数据
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
-	resp, err := cli.Get(ctx, "name")
+	resp, err := cli.Get(ctx, "collect_log_conf")
 	cancel()
 	if err != nil {
 		fmt.Printf("get from etcd failed, err:%v\n", err)
@@ -39,13 +41,14 @@ func main() {
 	for _, ev := range resp.Kvs {
 		fmt.Printf("%s:%s\n", ev.Key, ev.Value)
 	}
-	// del 取数据
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
-	delResponse, err := cli.Delete(ctx, "name")
-	cancel()
-	if err != nil {
-		fmt.Printf("del from etcd failed, err:%v\n", err)
-		return
-	}
-	fmt.Println("delete count: ",delResponse.Deleted)
+	fmt.Println(resp.Kvs)
+	//// del 取数据
+	//ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	//delResponse, err := cli.Delete(ctx, "name")
+	//cancel()
+	//if err != nil {
+	//	fmt.Printf("del from etcd failed, err:%v\n", err)
+	//	return
+	//}
+	//fmt.Println("delete count: ",delResponse.Deleted)
 }

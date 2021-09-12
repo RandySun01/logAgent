@@ -71,7 +71,8 @@ func main() {
 		return
 	}
 	fmt.Println("etcd config", allEtcdConf)
-
+	// 派一个 小弟去监控etcd中 configObj.EtcdConfig.CollectKey 对应值的变化
+	go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
 	// 2. 根据配置中的日志路径使用tail去收集日志
 	//err = tailfile.Init(configObj.CollectConfig.LogFilePath)
 	err = tailfile.Init(allEtcdConf) // 把从etcd中读取的配置项传到Init中

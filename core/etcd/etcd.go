@@ -56,3 +56,19 @@ func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 	}
 	return
 }
+
+// 监控etcd中日志收集项配置变化的函数
+
+func WatchConf(key string){
+	// watch
+	watchCh := client.Watch(context.Background(), key) // <-chan WatchResponse
+
+	// 获取修改的指监控
+	for wresp := range watchCh{
+		for _, env := range wresp.Events{
+			// 获取被修改的key
+			fmt.Printf("type:%s key:%s value: %s\n", env.Type, env.Kv.Key, env.Kv.Value)
+
+		}
+	}
+}

@@ -15,6 +15,8 @@ var (
 	msgChan chan *sarama.ProducerMessage
 )
 func  Init(address [] string, chanSize int64) (err error) {
+	// 启动命令./bin/windows/kafka-console-consumer.bat --bootstrap-server 127.0.0.1:9092 --topic web_log --from-beginning
+	// ./bin/windows/kafka-console-consumer.bat --bootstrap-server 127.0.0.1:9092 --topic randy_log --from-beginning
 	// 1. 生产者配置
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll // 发送完数据需要leader和follow都确认

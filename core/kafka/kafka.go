@@ -48,7 +48,7 @@ func sendMsg(){
 	}
 }
 
-// 定义一个函数向外暴露msgChan
+// 定义一个函数向外暴露msgChan,只存值
 func ToMsgChan(msg *sarama.ProducerMessage) {
 	msgChan <-msg
 }

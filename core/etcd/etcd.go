@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/clientv3"
 	"logAgent/common"
+	"logAgent/core/tailfile"
 	"time"
 )
 
@@ -59,16 +60,31 @@ func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 
 // 监控etcd中日志收集项配置变化的函数
 
-func WatchConf(key string){
-	// watch
-	watchCh := client.Watch(context.Background(), key) // <-chan WatchResponse
+func WatchConf(key string) {
+	for {
+		// watch
+		watchCh := client.Watch(context.Background(), key) // <-chan WatchResponse
 
-	// 获取修改的指监控
-	for wresp := range watchCh{
-		for _, env := range wresp.Events{
-			// 获取被修改的key
-			fmt.Printf("type:%s key:%s value: %s\n", env.Type, env.Kv.Key, env.Kv.Value)
-
+		// 获取修改的指监控
+		for wresp := range watchCh {
+			for _, evt := range wresp.Events {
+				// 获取被修改的key
+				fmt.Printf("type:%s key:%s value: %s\n", evt.Type, evt.Kv.Key, evt.Kv.Value)
+				var newConf []common.CollectEntry
+				if evt.Type == clientv3.EventTypeDelete {
+					// 如果是删除传空的文件配置
+					logrus.Warningf("FBI warning: etcd delete the key!!!")
+					tailfile.SendNewConf(   newConf)
+				}
+				err := json.Unmarshal(evt.Kv.Value, &newConf)
+				if err != nil {
+					logrus.Errorf("json unmarshal new conf failed, err: %v", err)
+					continue
+				}
+				// 告诉tailfiel这个模块应该启用新的配置
+				tailfile.SendNewConf(newConf) // 没有人接受，就是阻塞
+			}
 		}
 	}
+
 }

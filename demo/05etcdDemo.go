@@ -21,7 +21,8 @@ func main() {
 	defer cli.Close()
 	// 添加数据
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	str := `[{"path":"G:/goproject/go/logAgent/demo/web.log","topic":"web_log"},{"path":"G:/goproject/go/logAgent/demo/randy.log","topic":"randy_log"}]`
+	str := `[{"path":"G:/goproject/go/logAgent/demo/web.log","topic":"web_log"},{"path":"G:/goproject/go/logAgent/demo/randy.log","topic":"randy_log"},{"path":"G:/goproject/go/logAgent/demo/randy3.log","topic":"randy_log"}]`
+	//str := `[{"path":"G:/goproject/go/logAgent/demo/web.log","topic":"web_log"},{"path":"G:/goproject/go/logAgent/demo/randy.log","topic":"randy_log"}]`
 
 	_, err = cli.Put(ctx, "collect_log_conf", str)
 	if err != nil{

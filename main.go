@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
+	"logAgent/common"
 	"logAgent/core/etcd"
 	"logAgent/core/kafka"
 	"logAgent/core/tailfile"
@@ -41,10 +42,16 @@ func run() {
 	select {}
 }
 func main() {
+	// 获取主机ip
+	ip, err := common.GetLocalIP()
+	if err != nil{
+		logrus.Errorf("get ip failed err:%v", err)
+		return
+	}
 	// ini 使用教程https://ini.unknwon.io/docs
 	var configObj = new(Config)
 	// 0. 读取配置文件
-	err := ini.MapTo(configObj, "G:\\goproject\\go\\logAgent\\confing\\confing.ini")
+	err = ini.MapTo(configObj, "G:\\goproject\\go\\logAgent\\confing\\confing.ini")
 	if err != nil {
 		logrus.Errorf("load config failed,err:%v", err)
 	}
@@ -65,14 +72,16 @@ func main() {
 	logrus.Info("init etcd file success!")
 
 	// 拉取日志收集配置项的函数
-	allEtcdConf, err := etcd.GetConf(configObj.EtcdConfig.CollectKey)
+	// 读取机器的ip拼接读取日志配置
+	collectKey := fmt.Sprintf(configObj.EtcdConfig.CollectKey, ip)
+	allEtcdConf, err := etcd.GetConf(collectKey)
 	if err != nil {
 		logrus.Error("get etcd conf failed, err:%v", err)
 		return
 	}
 	fmt.Println("etcd config", allEtcdConf)
 	// 派一个 小弟去监控etcd中 configObj.EtcdConfig.CollectKey 对应值的变化
-	go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
+	go etcd.WatchConf(collectKey)
 	// 2. 根据配置中的日志路径使用tail去收集日志
 	//err = tailfile.Init(configObj.CollectConfig.LogFilePath)
 	err = tailfile.Init(allEtcdConf) // 把从etcd中读取的配置项传到Init中

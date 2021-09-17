@@ -3,6 +3,7 @@ module logAgent
 require (
 	github.com/Shopify/sarama v1.19.0
 	github.com/hpcloud/tail v1.0.0
+	github.com/shirou/gopsutil v3.21.8+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	go.etcd.io/etcd v3.3.25+incompatible
 	gopkg.in/ini.v1 v1.63.0
@@ -10,6 +11,7 @@ require (
 
 require (
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
+	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/coreos/bbolt v1.3.4 // indirect
 	github.com/coreos/etcd v3.3.25+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -23,6 +25,7 @@ require (
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/frankban/quicktest v1.13.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -41,6 +44,8 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
+	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
@@ -62,4 +67,5 @@ require (
 go 1.17
 
 replace github.com/coreos/bbolt v1.3.4 => go.etcd.io/bbolt v1.3.4
+
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0

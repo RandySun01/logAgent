@@ -51,7 +51,7 @@ func main() {
 	// ini 使用教程https://ini.unknwon.io/docs
 	var configObj = new(Config)
 	// 0. 读取配置文件
-	err = ini.MapTo(configObj, "G:\\goproject\\go\\logAgent\\confing\\confing.ini")
+	err = ini.MapTo(configObj, "G:\\goproject\\go\\logAgent\\conf\\conf.ini")
 	if err != nil {
 		logrus.Errorf("load config failed,err:%v", err)
 	}

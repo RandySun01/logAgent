@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	client "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2"
 	"log"
 	"time"
 )
@@ -13,14 +13,10 @@ import (
 @create 2021-09-17-8:58
 */
 
-import (
-	"github.com/influxdata/influxdb-client-go/v2"
-)
-
 var bucket = "RandySun"
 var org = "RandySun"
 
-func connInflux() client.Client {
+func connInflux() influxdb2.Client {
 	// 连接数据库客户端
 	token := "iLgyKP7N4-oTGKSj-vGVD8w9p-tHJQ-24BNouCfb4HEtHlSU-GeOCZ0cCWE3RauoSZDmVHJuB7Rg71Xd2b22sQ=="
 	url := "http://127.0.0.1:8086"
@@ -29,7 +25,7 @@ func connInflux() client.Client {
 }
 
 // insert
-func writesPoints(client client.Client, org, bucket string) {
+func writesPoints(client influxdb2.Client, org, bucket string) {
 
 	tags := map[string]string{"cpu": "ih-cpu"}
 	fields := map[string]interface{}{
@@ -48,7 +44,7 @@ func writesPoints(client client.Client, org, bucket string) {
 }
 
 //// query
-func queryDB(client client.Client, org string) (err error) {
+func queryDB(client influxdb2.Client, org string) (err error) {
 
 	queryAPI := client.QueryAPI(org)
 

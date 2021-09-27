@@ -6,6 +6,7 @@ import (
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/net"
 	"log"
 	"time"
 )
@@ -19,6 +20,11 @@ const (
 	MemInfoType  = "mem"
 	DiskInfoType = "disk"
 	NetInfoType  = "net"
+)
+
+var (
+	lastNetIOStatTimeStamp int64    // 上一次获取IO数据的时间点
+	lastNetInfo            *NetInfo //上一次的网络IO数据
 )
 
 // 存放系统信息结构体
@@ -69,13 +75,24 @@ type PartitionStat struct {
 
 // DiskInfo 存放磁盘
 type DiskInfo struct {
-	PartitionUsageStat map[string]*disk.IOCountersStat
+	PartitionUsageStat map[string]*disk.UsageStat
 }
 
 // 存放网卡信息
 
+type IOStat struct { //存放网卡速率
+	BytesSent       uint64  `json:"bytes_sent"`   // number of bytes sent
+	BytesRecv       uint64  `json:"bytes_recv"`   // number of bytes received
+	PacketsSent     uint64  `json:"packets_sent"` // number of packets sent
+	PacketsRecv     uint64  `json:"packets_recv"` // number of packets received
+	BytesSentRate   float64 `json:"bytes_sent_rate"`
+	BytesRecvRate   float64 `json:"bytes_recv_rate"`
+	PacketsSentRate float64 `json:"packets_sent_rate"`
+	PacketsRecvRate float64 `json:"packets_recv_rate"`
+}
 type NetInfo struct {
-	NetIOCountersStat
+	//NetIOCountersStat map[string]*net.IOCountersStat
+	NetIOCountersStat map[string]*IOStat
 }
 
 func connInflux2() client.Client {
@@ -199,6 +216,43 @@ func writesDiskPoints(cli client.Client, sysInfo SysInfo) {
 	log.Println("insert disk success")
 }
 
+// 将网卡信息写入influxDB
+func writesNetPoints(cli client.Client, sysInfo SysInfo) {
+	netInfo := sysInfo.Data.(*NetInfo) // 类型转换
+
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  "monitor",
+		Precision: "s", //精度，默认ns
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	// 根据传入数据的类型，插入不同类型的数据
+	for k, v := range netInfo.NetIOCountersStat {
+		// 存放每一个节点
+		tags := map[string]string{"name": k} // 每一个网卡存在tag中
+		fields := map[string]interface{}{
+			"bytes_sent_rate":   v.BytesSentRate,
+			"bytes_recv_rate":   v.BytesRecvRate,
+			"packets_sent_rate": v.PacketsSentRate,
+			"packets_recv_rate": v.PacketsRecvRate,
+		}
+		// 添加数据
+		pt, err := client.NewPoint("net", tags, fields, time.Now())
+		if err != nil {
+			log.Fatal(err)
+		}
+		bp.AddPoint(pt)
+	}
+
+	// 写入数据
+	err = cli.Write(bp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("insert net success")
+}
+
 func getCpuInfo1() {
 	var sysInfo SysInfo
 	var cpuInfo = new(CpuInfo)
@@ -267,12 +321,62 @@ func getDiskInfo1() {
 	writesDiskPoints(client, sysInfo)
 }
 
+func getNetInfo1() {
+	var sysInfo SysInfo
+
+	var netInfo = &NetInfo{
+		NetIOCountersStat: make(map[string]*IOStat, 18),
+	}
+	info, _ := net.IOCounters(true)
+	currentTimeStamp := time.Now().Unix() // 获取当前网卡的时间
+	for _, netIO := range info {
+		//记录当前网卡字节数
+		var ioStat = new(IOStat)
+		ioStat.BytesSent = netIO.BytesSent     // 发送字节
+		ioStat.BytesRecv = netIO.BytesRecv     // 接收字节
+		ioStat.PacketsSent = netIO.PacketsSent // 发送包字节
+		ioStat.PacketsRecv = netIO.PacketsRecv // 接收包字节
+
+		// 记录
+		netInfo.NetIOCountersStat[netIO.Name] = ioStat
+
+		// 开始计算网卡相关速率
+		if lastNetIOStatTimeStamp == 0 || lastNetInfo == nil {
+			continue
+		}
+		// 计算时间间隔和速率
+		interval := currentTimeStamp - lastNetIOStatTimeStamp
+		// 计算速率
+		bytesSentRate := float64(ioStat.BytesSent-lastNetInfo.NetIOCountersStat[netIO.Name].BytesSent) / float64(interval)
+		bytesRecvRate := float64(ioStat.BytesRecv-lastNetInfo.NetIOCountersStat[netIO.Name].BytesRecv) / float64(interval)
+		packetsSentRate := float64(ioStat.PacketsSent-lastNetInfo.NetIOCountersStat[netIO.Name].PacketsSent) / float64(interval)
+		packetsRecvRate := float64(ioStat.PacketsRecv-lastNetInfo.NetIOCountersStat[netIO.Name].PacketsRecv) / float64(interval)
+
+		// 记录速率
+		ioStat.BytesSentRate = bytesSentRate
+		ioStat.BytesRecvRate = bytesRecvRate
+		ioStat.PacketsSentRate = packetsSentRate
+		ioStat.PacketsRecvRate = packetsRecvRate
+
+	}
+	lastNetIOStatTimeStamp = currentTimeStamp // 更新上一次时间
+	lastNetInfo = netInfo                     // 更新上一次发送包
+
+	// 写入数据库中
+	sysInfo.InfoType = NetInfoType
+	sysInfo.Data = netInfo
+	client := connInflux2()
+	writesNetPoints(client, sysInfo)
+
+}
+
 func run(interval time.Duration) {
 	tick := time.Tick(interval)
 	for _ = range tick {
 		getCpuInfo1()
 		getMemInfo1()
 		getDiskInfo1()
+		getNetInfo1()
 	}
 
 }
